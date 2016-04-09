@@ -1,0 +1,129 @@
+#!/bin/bash
+PREFIX=$( dirname $( dirname $(which lyx) ) )/share/lyx/layouts
+DEST=${PREFIX}
+FORCE=1
+JUSTFORME=1
+
+if ! which lyx > /dev/null 2>&1; then
+    echo "lyxへのパスが通っていません。lyxをインストールし、パスを通してください"
+    exit 2
+fi
+
+usage() {
+    cat <<EOF >&2
+Usage: $0 [-v | --version] [-h | --help] [-f | --force] [-j | --justforme]
+
+	-h,	--help		ヘルプの表示
+	-v,	--version	バージョンの表示
+	-f,	--force		ファイルが存在していても上書き
+	-j,	--justforme	現在のユーザのみ使えるようにインストール
+EOF
+}
+
+usage_exit() {
+    usage
+    exit 0
+}
+
+version() {
+    echo "LyX用ltjsclasses・BXjsclsレイアウト作成バッチ(${0}) version 1.0"
+    exit 0
+}
+
+ARGS=$( getopt -o "hvfj" -l "help,version,force,justforme" \
+	       -n "$( basename "$0" )" -- "$@" )
+[ "$?" = "0" ] || exit 1
+eval set -- "$ARGS"
+
+while true; do
+    case "$1" in
+	-h|--help )
+	    usage_exit
+	    ;;
+	-v|--version )
+	    version
+	    ;;
+	-j|--justforme )
+	    JUSTFORME=0
+	    shift 1
+	    ;;
+	-f|--force )
+	    FORCE=0
+	    shift 1
+	    ;;
+	-- )
+	    shift 1
+	    break
+	    ;;
+	* )
+	    echo "${0}: 不明なオプションです: 「${1}」"
+	    usage
+	    exit 1
+	    ;;
+    esac
+done
+
+if [ $JUSTFORME = 0 ]; then
+    DEST=~/.lyx/layouts
+    if [ ! -e ${DEST} ]; then
+	mkdir -p ${DEST} || exit 1
+    fi
+    if [ ! -d ${DEST} ]; then
+	echo "${DEST} はディレクトリではありません。削除してください。" >&2
+	exit 1
+    fi
+fi
+
+if [ -d ${DEST} -a ! -w ${DEST} ]; then
+    echo "${DEST} に書き込み権限がありません。" >&2
+    if [ ${JUSTFORME} = 1 ]; then
+	echo "sudoを付け忘れていないかなどを確認してください。" >&2
+    fi
+    exit 1
+fi
+
+# process [BASE] [NEWNAME] [TYPE]
+# e.g. process jsarticle bxjsarticle Article
+process() {
+    local IN=${PREFIX}/${1}.layout
+    local OUT=${DEST}/${2}.layout
+    if ! kpsewhich ${2}.cls > /dev/null 2>&1; then
+	echo "${2} は文書クラスとして存在しないかインストールされていません。スキップします。"
+	return 1
+    fi
+    if [ -e ${OUT} ]; then
+	if [ -d ${OUT}.layout ]; then
+	    echo "${OUT} はディレクトリです。削除してください。" >&2
+	    exit 2
+	fi
+	if [ ${FORCE} = 1 ]; then
+	    echo "${OUT} は既に存在します。スキップします。"
+	    return 1
+	fi
+    fi
+    sed -e "s/{Japanese ${3} (${1})}/{Japanese ${3} (${2})}/" ${IN} > ${OUT} \
+	&& echo "${1} のレイアウトから${2}のレイアウトを生成しました" \
+	    || {
+	    echo "${1} のレイアウトから${2}のレイアウトを生成できませんでした" >&2
+	    exit 1
+	}
+}
+
+process_article() {
+    process jsarticle "${1}jsarticle" Article
+}
+
+process_book() {
+    process jsbook "${1}jsbook" Book
+}
+
+
+process_set() {
+    process_article $1
+    process_book $1
+}
+
+process_set lt
+process_set bx
+echo "すべてのレイアウトの生成が完了しました。"
+echo "LyXを起動してツール→環境構成を行ってください。"
