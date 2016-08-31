@@ -5,7 +5,15 @@ FORCE=1
 JUSTFORME=1
 
 if ! which lyx > /dev/null 2>&1; then
-    echo "lyxへのパスが通っていません。lyxをインストールし、パスを通してください"
+    echo "lyxへのパスが通っていません。lyxをインストールし、パスを通してください。"
+    exit 2
+fi
+
+if ! which kpsewhich > /dev/null 2>&1; then
+    echo "TeXへのパスが通っていません。TeXをインストールし、パスを通してください。"
+    if [ $USER = root ]; then
+	echo "rootと他ユーザではパスが別々です。rootでも通すようにしてください。"
+    fi
     exit 2
 fi
 
@@ -102,9 +110,9 @@ process() {
 	fi
     fi
     sed -e "s/{Japanese ${3} (${1})}/{Japanese ${3} (${2})}/" ${IN} > ${OUT} \
-	&& echo "${1} のレイアウトから${2}のレイアウトを生成しました" \
+	&& echo "${1} のレイアウトから${2}のレイアウトを生成しました。" \
 	    || {
-	    echo "${1} のレイアウトから${2}のレイアウトを生成できませんでした" >&2
+	    echo "${1} のレイアウトから${2}のレイアウトを生成できませんでした。" >&2
 	    exit 1
 	}
 }
