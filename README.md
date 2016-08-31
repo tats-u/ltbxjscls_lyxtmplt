@@ -7,13 +7,25 @@ LuaTeX・XeTeXをLyXで使う場合、ltjsarticle・bxjsarticleなどのクラ�
 TeX・LyXをインストールしたあと、次のコマンドを実行するだけです。
 
 ``` bash
-sudo ./install_lyxtemplate
+# sudoを使用する場合
+curl -LsSf https://raw.githubusercontent.com/tats-u/ltbxjscls_lyxtmplt/master/install_lyxtemplate | sudo env PATH="$PATH" bash
+# sudoを使用しない場合(TeX・LyXにパスが通っているか確認してください)
+curl -LsSf https://raw.githubusercontent.com/tats-u/ltbxjscls_lyxtmplt/master/install_lyxtemplate | bash
 ```
 
 その後、LyXを起動し、オプション→環境構成を行います。これでLyXを次回以降に起動して新規文書を作成して文書設定を行う際に、文書クラスからltjsarticle・bxjsarticleなどが選べるようになります。
 
 ## オプション
-このスクリプトにはいくつかのオプションがあります。
+このスクリプトにはいくつかのオプションがあります。オプションを使用する場合は、「`|`」の後を、
+
+```bash
+# sudoを使用する場合
+sudo env PATH="$PATH" bash /dev/stdin [OPTIONS]
+# sudoを使用しない場合
+bash /dev/stdin [OPTIONS]
+```
+
+に変更して実行します。オプションは次の表の通りです。
 
 |オプション         |意味                                    |
 |--------------------|---------------------------------------|
