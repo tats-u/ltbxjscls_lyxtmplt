@@ -15,6 +15,8 @@ curl -LsSf https://raw.githubusercontent.com/tats-u/ltbxjscls_lyxtmplt/master/in
 
 その後、LyXを起動し、オプション→環境構成を行います。これでLyXを次回以降に起動して新規文書を作成して文書設定を行う際に、文書クラスからltjsarticle・bxjsarticleなどが選べるようになります。
 
+なお、このスクリプトはWindowsにも対応していますが、**sudoを使用する代わりにGit Bashを管理者権限で開き、下側のコマンドを**実行してください。LyXにパスが通っている必要はありません。(ただしTeXにはパスが通っていなければなりません)
+
 ## オプション
 このスクリプトにはいくつかのオプションがあります。オプションを使用する場合は、「`|`」の後を、
 
