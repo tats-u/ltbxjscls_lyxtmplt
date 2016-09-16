@@ -1,17 +1,36 @@
 #!/bin/bash
-PREFIX=$( dirname $( dirname $(which lyx) ) )/share/lyx/layouts
-DEST=${PREFIX}
+
+windows() {
+  uname -a | grep -qiE '(msys|mingw|cygwin)'
+}
+
+nolyx() {
+    echo "lyxへのパスが通っていません。lyxをインストールし、パスを通してください。"
+}
+
+if windows; then
+  LYXROOT=`find '/c/Program Files (x86)/' -mindepth 1 -maxdepth 1 -regex '.*/LyX.*' -type d | tail -n 1`
+  if [ -z "$LYXROOT" ]; then
+    nolyx
+    exit 2
+  fi
+  PREFIX="$LYXROOT/Resources/layouts"
+else
+  if ! which lyx > /dev/null 2>&1; then
+    nolyx
+    exit 2
+  fi
+  PREFIX="$( dirname $( dirname $(which lyx) ) )/share/lyx/layouts"
+fi
+
+DEST="${PREFIX}"
 FORCE=1
 JUSTFORME=1
 
-if ! which lyx > /dev/null 2>&1; then
-    echo "lyxへのパスが通っていません。lyxをインストールし、パスを通してください。"
-    exit 2
-fi
 
 if ! which kpsewhich > /dev/null 2>&1; then
     echo "TeXへのパスが通っていません。TeXをインストールし、パスを通してください。"
-    if [ $USER = root ]; then
+    if [ "$USER" = root ]; then
 	echo "rootと他ユーザではパスが別々です。rootでも通すようにしてください。"
     fi
     exit 2
@@ -72,17 +91,26 @@ while true; do
 done
 
 if [ $JUSTFORME = 0 ]; then
-    DEST=~/.lyx/layouts
-    if [ ! -e ${DEST} ]; then
-	mkdir -p ${DEST} || exit 1
+    if windows; then
+      DEST=`find "$HOME/AppData/Roaming/" -maxdepth 1 -mindepth 1 -type d -regex '.*/LyX.*' | tail -n 1`
+      if [ -z "$DEST" ]; then
+        echo 'LyXのローカルディレクトリが~/AppData/Roaming内に見つかりませんでした。'>&2
+	exit 1
+      fi
+      DEST="$DEST/layouts"
+    else
+      DEST=~/.lyx/layouts
     fi
-    if [ ! -d ${DEST} ]; then
+    if [ ! -e "${DEST}" ]; then
+	mkdir -p "${DEST}" || exit 1
+    fi
+    if [ ! -d "${DEST}" ]; then
 	echo "${DEST} はディレクトリではありません。削除してください。" >&2
 	exit 1
     fi
 fi
 
-if [ -d ${DEST} -a ! -w ${DEST} ]; then
+if [ -d "${DEST}" -a ! -w "${DEST}" ]; then
     echo "${DEST} に書き込み権限がありません。" >&2
     if [ ${JUSTFORME} = 1 ]; then
 	echo "sudoを付け忘れていないかなどを確認してください。" >&2
@@ -93,14 +121,14 @@ fi
 # process [BASE] [NEWNAME] [TYPE]
 # e.g. process jsarticle bxjsarticle Article
 process() {
-    local IN=${PREFIX}/${1}.layout
-    local OUT=${DEST}/${2}.layout
-    if ! kpsewhich ${2}.cls > /dev/null 2>&1; then
+    local IN="${PREFIX}/${1}.layout"
+    local OUT="${DEST}/${2}.layout"
+    if ! kpsewhich "${2}.cls" > /dev/null 2>&1; then
 	echo "${2} は文書クラスとして存在しないかインストールされていません。スキップします。"
 	return 1
     fi
-    if [ -e ${OUT} ]; then
-	if [ -d ${OUT}.layout ]; then
+    if [ -e "${OUT}" ]; then
+	if [ -d "${OUT}.layout" ]; then
 	    echo "${OUT} はディレクトリです。削除してください。" >&2
 	    exit 2
 	fi
@@ -109,7 +137,7 @@ process() {
 	    return 1
 	fi
     fi
-    sed -e "s/{Japanese ${3} (${1})}/{Japanese ${3} (${2})}/" ${IN} > ${OUT} \
+    sed -e "s/{Japanese ${3} (${1})}/{Japanese ${3} (${2})}/" "${IN}" > "${OUT}" \
 	&& echo "${1} のレイアウトから${2}のレイアウトを生成しました。" \
 	    || {
 	    echo "${1} のレイアウトから${2}のレイアウトを生成できませんでした。" >&2
@@ -127,8 +155,8 @@ process_book() {
 
 
 process_set() {
-    process_article $1
-    process_book $1
+    process_article "$1"
+    process_book "$1"
 }
 
 process_set lt
